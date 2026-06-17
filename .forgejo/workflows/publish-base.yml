@@ -1,0 +1,88 @@
+# Forgejo Actions: build + publish the mnemosyne-core-base image to the Forgejo
+# container registry. Runs on the nas01 self-hosted runner (label `nas01`) with
+# the host docker socket mounted, so `docker build/push` targets nas01's own
+# daemon + the local registry.
+#
+# The base image bakes mnemosyne-core (this repo) + the private mnemosyne-schema
+# spec (cloned via CLONE_TOKEN) as a named build context. Only this build needs
+# the private schema -- constellation stars build FROM the published image.
+#
+# REQUIRED Forgejo Actions secrets (repo -> Settings -> Actions -> Secrets):
+#   CLONE_TOKEN     Forgejo PAT (read:repository) -- clones rob/mnemosyne-schema.
+#   REGISTRY_TOKEN  Forgejo PAT (write:package)  -- pushes to the registry.
+#
+# Trigger: push a `base-v*` tag (image tag = the part after `base-`), or dispatch
+# manually with an explicit tag input.
+
+name: publish-base
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "image tag (default: v0.1.0)"
+        required: false
+  push:
+    tags: ["base-v*"]
+
+jobs:
+  build-and-push:
+    runs-on: nas01
+    container:
+      image: catthehacker/ubuntu:act-22.04
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+
+      # Clone the private schema adjacent to the checkout so the Dockerfile.base
+      # named build context (../mnemosyne-schema) resolves at build time.
+      - name: Fetch the private schema (named build context)
+        shell: bash
+        env:
+          CLONE_TOKEN: ${{ secrets.CLONE_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd "$(dirname "$GITHUB_WORKSPACE")"
+          rm -rf mnemosyne-schema
+          git clone --depth 1 \
+            "https://x-access-token:${CLONE_TOKEN}@forgejo.notusmi.com/rob/mnemosyne-schema.git" \
+            mnemosyne-schema
+
+      - name: Resolve image tag
+        id: t
+        shell: bash
+        run: |
+          T="${{ github.event.inputs.tag }}"
+          if [ -z "$T" ]; then
+            case "${{ github.ref }}" in
+              refs/tags/base-*) T="${GITHUB_REF#refs/tags/base-}";;
+              *) T="v0.1.0";;
+            esac
+          fi
+          echo "tag=$T" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to the Forgejo registry
+        shell: bash
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: echo "$REGISTRY_TOKEN" | docker login forgejo.notusmi.com -u rob --password-stdin
+
+      - name: Build + push base image
+        shell: bash
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          set -euo pipefail
+          IMG=forgejo.notusmi.com/rob/mnemosyne-core-base
+          TAG="${{ steps.t.outputs.tag }}"
+          docker build -f Dockerfile.base \
+            --build-context mnemosyne_schema=../mnemosyne-schema \
+            -t "$IMG:$TAG" -t "$IMG:latest" .
+          docker push "$IMG:$TAG"
+          docker push "$IMG:latest"
+
+      - name: Verify image (core import + schema baked)
+        shell: bash
+        run: |
+          docker run --rm "forgejo.notusmi.com/rob/mnemosyne-core-base:${{ steps.t.outputs.tag }}" \
+            python -c "import mnemosyne_core; from pathlib import Path; d=Path('/app/schema'); n=len(list(d.glob('*.toml'))); assert n, 'no schema files'; print('OK core', mnemosyne_core.__version__, '|', n, 'schema files')"
