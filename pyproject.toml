@@ -1,6 +1,6 @@
 [project]
 name = "mnemosyne-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "A standard Forge MCP service."
 requires-python = ">=3.12"
 license = "Apache-2.0"
