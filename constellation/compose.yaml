@@ -1,0 +1,18 @@
+# Mnemosyne constellation — shared network stack for nas01.
+#
+# Creates the internal docker network that all constellation stars join.
+# Each star has its own compose.yaml that references this network as external.
+# PG binds to localhost only (no container-exposed port).
+#
+# Deploy: docker compose -f constellation/compose.yaml up -d
+# Stars join by declaring `networks: mnemosyne-net: external: true` in their
+# own compose.yaml and running on the same Docker engine.
+#
+# The single edge (Hades gateway, MP-B) is the only service with host-port
+# exposure. Until MP-B lands, stars are reachable only on the internal net.
+
+networks:
+  mnemosyne-net:
+    name: mnemosyne-net
+    driver: bridge
+    internal: false
