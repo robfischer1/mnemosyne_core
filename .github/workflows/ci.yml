@@ -43,7 +43,7 @@ jobs:
       # (The base image mnemosyne-core-base builds is separately gated by Trivy
       # in publish-base.yml, #1479.)
       - name: Dependency vuln scan (pip-audit)
-        run: uv run --with pip-audit pip-audit
+        run: uv run --with pip-audit pip-audit --skip-editable
 
       - name: SAST (opengrep, scoped taint rules)
         run: |
