@@ -28,4 +28,5 @@ build/
 AGENTS.md
 CLAUDE.md
 .claude/
+.specify/
 .furnace/deployed.json
