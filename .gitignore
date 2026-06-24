@@ -10,6 +10,9 @@ build/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Runtime state (externalize to a volume / backing service — never commit)
 *.db
