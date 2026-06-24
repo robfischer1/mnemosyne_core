@@ -1,10 +1,12 @@
 # This file records the copier template + answers for this repo.
 # Managed by Copier — do not edit by hand. Run `copier update` to pull template
 # changes (3-way merged against your local edits).
-_commit: v0.2.0
+_commit: v0.7.0
 _src_path: C:\Users\robfi\Forge\Outputs\python-repo-template
 author_name: Rob Fischer
+core_backed: false
 description: A standard Forge MCP service.
+mcp: true
 package_name: mnemosyne_core
 port: 8201
 project_name: Mnemosyne Core

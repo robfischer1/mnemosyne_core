@@ -9,8 +9,6 @@ environment; the schema is loaded from the spec, never baked in.
 
 from __future__ import annotations
 
-from importlib.metadata import PackageNotFoundError, version
-
 from mnemosyne_core.capabilities import (
     Capability,
     CapabilityError,
@@ -22,10 +20,9 @@ from mnemosyne_core.repository import Repository
 from mnemosyne_core.schema import Schema, load_schema
 from mnemosyne_core.session import NamespaceBoundaryError, scoped_session
 
-try:
-    __version__ = version("mnemosyne-core")
-except PackageNotFoundError:  # pragma: no cover - source tree without metadata
-    __version__ = "0.0.0+unknown"
+# Single-source of truth for the package version: hatch reads this literal at
+# build time via [tool.hatch.version]. Bump it here only.
+__version__ = "0.2.0"
 
 __all__ = [
     "Capability",
