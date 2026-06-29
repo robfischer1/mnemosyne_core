@@ -5,7 +5,7 @@
 
 # -- Stage 1: builder ---------------------------------------------------------
 FROM python:3.12-slim-bookworm AS builder
-COPY --from=ghcr.io/astral-sh/uv:0.11.11 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.11.25 /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
